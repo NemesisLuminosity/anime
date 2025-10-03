@@ -1,0 +1,57 @@
+name: Backend API Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Create env file
+        shell: pwsh
+        run: |
+          $EnvPath = "apps/web/.env.local"
+          "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" | Out-File -FilePath $EnvPath -Encoding utf8
+          "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" | Out-File -FilePath $EnvPath -Append -Encoding utf8
+
+      - name: Build
+        working-directory: apps/web
+        run: npm run build
+
+      - name: Start server
+        working-directory: apps/web
+        shell: pwsh
+        run: |
+          Start-Process -FilePath npm -ArgumentList 'start' -PassThru | Out-Null
+          Start-Sleep -Seconds 2
+
+      - name: Wait for server
+        run: npx wait-on http://localhost:3000
+
+      - name: Run backend API tests
+        shell: pwsh
+        run: |
+          pwsh -File scripts/test-backend.ps1 `
+            -SupabaseUrl "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" `
+            -AnonKey "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" `
+            -ApiBase "http://localhost:3000" `
+            -Email "${{ secrets.TEST_EMAIL }}" `
+            -Password "${{ secrets.TEST_PASSWORD }}" `
+            -Username "ci-user"
+
+
