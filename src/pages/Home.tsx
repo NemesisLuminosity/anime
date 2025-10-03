@@ -1,49 +1,26 @@
 import { Search, TrendingUp, Star, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import AnimeCard from "@/components/AnimeCard";
 import ParticleBackground from "@/components/ParticleBackground";
+import { useTopAnime, useSeasonalAnime } from "@/hooks/useAnimeData";
+import { Skeleton } from "@/components/ui/skeleton";
 import heroBg from "@/assets/hero-bg.jpg";
-import anime1 from "@/assets/anime1.jpg";
-import anime2 from "@/assets/anime2.jpg";
-import anime3 from "@/assets/anime3.jpg";
-import anime4 from "@/assets/anime4.jpg";
 
 const Home = () => {
-  const trendingAnime = [
-    {
-      id: 1,
-      title: "Cyberpunk Chronicles",
-      image: anime1,
-      rating: 9.2,
-      year: 2024,
-      genre: "Sci-Fi",
-    },
-    {
-      id: 2,
-      title: "Neon Warriors",
-      image: anime2,
-      rating: 8.9,
-      year: 2024,
-      genre: "Action",
-    },
-    {
-      id: 3,
-      title: "Digital Detective",
-      image: anime3,
-      rating: 8.7,
-      year: 2023,
-      genre: "Mystery",
-    },
-    {
-      id: 4,
-      title: "Future Academy",
-      image: anime4,
-      rating: 8.5,
-      year: 2024,
-      genre: "School",
-    },
-  ];
+  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+  const { data: topAnime, isLoading: topLoading } = useTopAnime();
+  const { data: seasonalAnime, isLoading: seasonalLoading } = useSeasonalAnime();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/browse?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
 
   return (
     <div className="min-h-screen relative">
@@ -70,22 +47,23 @@ const Home = () => {
               Your Next Anime
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Explore the ultimate anime database. Find your favorites, discover new series, and dive into a world of endless entertainment.
+              Explore thousands of anime series and movies. Find your favorites, discover new titles, and dive into endless entertainment.
             </p>
 
-            {/* Search Bar */}
-            <div className="max-w-2xl mx-auto mb-8">
+            <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-8">
               <div className="flex gap-2 glass-strong rounded-full p-2 hover-glow-cyan">
                 <Input
                   placeholder="Search for anime, characters, or genres..."
                   className="bg-transparent border-0 focus-visible:ring-0 text-lg"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <Button variant="neon" size="lg" className="rounded-full px-8">
+                <Button variant="neon" size="lg" className="rounded-full px-8" type="submit">
                   <Search className="mr-2 h-5 w-5" />
                   Search
                 </Button>
               </div>
-            </div>
+            </form>
 
             {/* Quick Stats */}
             <div className="flex flex-wrap justify-center gap-8 text-sm">
@@ -95,11 +73,11 @@ const Home = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Star className="h-5 w-5 text-secondary" />
-                <span className="text-muted-foreground">500K+ Characters</span>
+                <span className="text-muted-foreground">Real-time Data</span>
               </div>
               <div className="flex items-center gap-2">
                 <Zap className="h-5 w-5 text-accent" />
-                <span className="text-muted-foreground">1M+ Reviews</span>
+                <span className="text-muted-foreground">Personalized Lists</span>
               </div>
             </div>
           </div>
@@ -119,22 +97,76 @@ const Home = () => {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-4xl font-bold mb-2">
-                <span className="gradient-text">Trending Now</span>
+                <span className="gradient-text">Top Rated Anime</span>
               </h2>
               <p className="text-muted-foreground">
-                The hottest anime everyone is watching
+                The highest rated anime of all time
               </p>
             </div>
-            <Button variant="glass">
+            <Button variant="glass" onClick={() => navigate('/browse')}>
               View All
             </Button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {trendingAnime.map((anime) => (
-              <AnimeCard key={anime.id} {...anime} />
-            ))}
+          {topLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              {[...Array(10)].map((_, i) => (
+                <Skeleton key={i} className="h-96 rounded-lg" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              {topAnime?.slice(0, 10).map((anime) => (
+                <AnimeCard
+                  key={anime.mal_id}
+                  id={anime.mal_id}
+                  title={anime.title}
+                  image={anime.images.jpg.large_image_url}
+                  rating={anime.score}
+                  year={anime.year || 2024}
+                  genre={anime.genres[0]?.name || "Anime"}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Seasonal Anime Section */}
+      <section className="relative py-20 px-4">
+        <div className="container mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-4xl font-bold mb-2">
+                <span className="gradient-text">This Season</span>
+              </h2>
+              <p className="text-muted-foreground">
+                Currently airing anime
+              </p>
+            </div>
           </div>
+
+          {seasonalLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              {[...Array(10)].map((_, i) => (
+                <Skeleton key={i} className="h-96 rounded-lg" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              {seasonalAnime?.slice(0, 10).map((anime) => (
+                <AnimeCard
+                  key={anime.mal_id}
+                  id={anime.mal_id}
+                  title={anime.title}
+                  image={anime.images.jpg.large_image_url}
+                  rating={anime.score}
+                  year={anime.year || 2024}
+                  genre={anime.genres[0]?.name || "Anime"}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -150,6 +182,7 @@ const Home = () => {
               (genre) => (
                 <button
                   key={genre}
+                  onClick={() => navigate(`/browse?genre=${genre.toLowerCase()}`)}
                   className="glass-strong rounded-lg p-6 hover:scale-105 transition-all duration-300 hover-glow-cyan group"
                 >
                   <h3 className="text-xl font-semibold group-hover:text-primary transition-colors">

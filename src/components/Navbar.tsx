@@ -1,10 +1,16 @@
-import { Link, useLocation } from "react-router-dom";
-import { Search, Sparkles, User, Menu } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Search, Sparkles, User, Menu, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/useAuth";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useState } from "react";
 
 const Navbar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
   
   const navLinks = [
     { name: "Home", path: "/" },
@@ -13,6 +19,13 @@ const Navbar = () => {
   ];
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/browse?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass-strong border-b border-border/50">
@@ -43,16 +56,36 @@ const Navbar = () => {
 
           {/* Search and User */}
           <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-2 glass rounded-lg px-3 py-2">
+            <form onSubmit={handleSearch} className="hidden md:flex items-center gap-2 glass rounded-lg px-3 py-2">
               <Search className="h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search anime..."
                 className="w-48 bg-transparent border-0 focus-visible:ring-0 h-6 p-0"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
-            </div>
-            <Button variant="ghost" size="icon" className="hover-glow-cyan">
-              <User className="h-5 w-5" />
-            </Button>
+            </form>
+            
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="hover-glow-cyan">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="glass-strong border-border/50">
+                  <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button variant="neon" size="sm" onClick={() => navigate('/auth')}>
+                Sign In
+              </Button>
+            )}
+            
             <Button variant="ghost" size="icon" className="md:hidden">
               <Menu className="h-5 w-5" />
             </Button>

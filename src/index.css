@@ -133,6 +133,14 @@ All colors MUST be HSL.
     box-shadow: var(--glow-cyan);
   }
 
+  .hover-glow-purple {
+    transition: var(--transition-smooth);
+  }
+
+  .hover-glow-purple:hover {
+    box-shadow: var(--glow-purple);
+  }
+
   /* Gradient text */
   .gradient-text {
     background: var(--gradient-cyber);
@@ -157,12 +165,27 @@ All colors MUST be HSL.
     100% { background-position: 1000px 0; }
   }
 
+  @keyframes slide-up {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
 
   .animate-pulse-glow {
     animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.5s ease-out;
   }
 }
 
